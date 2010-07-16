@@ -698,16 +698,17 @@ rusb_bulk_read(
   usb_dev_handle *p = get_usb_devhandle(v);
   int ep = NUM2INT(vep);
   int timeout = NUM2INT(vtimeout);
-  char *bytes;
-  int size;
+  int size = NUM2INT(vbytes);
+  char *buffer = (char*)malloc(sizeof(char*) * size);
   int ret;
-  StringValue(vbytes);
-  rb_str_modify(vbytes);
-  bytes = RSTRING_PTR(vbytes);
-  size = RSTRING_LEN(vbytes);
-  ret = usb_bulk_read(p, ep, bytes, size, timeout);
+  ret = usb_bulk_read(p, ep, buffer, size, timeout);
   check_usb_error("usb_bulk_read", ret);
-  return INT2NUM(ret);
+  if (ret != 0)
+  {
+    rb_raise(rb_eRuntimeError, "USB bulk read failed. ret=%d", ret);
+    return Qnil;
+  }
+  return rb_str_new(buffer, size);
 }
 
 /* USB::DevHandle#usb_interrupt_write(endpoint, bytes, timeout) */
